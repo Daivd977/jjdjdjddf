@@ -1,60 +1,59 @@
 const express = require("express");
-const fetch = require("node-fetch");
-const cors = require("cors");
-
 const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = process.env.PORT || 10000;
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
-const TOKEN = process.env.API_TOKEN;
+const API_TOKEN = process.env.API_TOKEN;
+
+app.use(express.json()); // <== ESSENCIAL para ler JSON corretamente
 
 app.post("/log", async (req, res) => {
-  const auth = req.headers.authorization;
-  if (auth !== TOKEN) return res.status(403).json({ error: "Acesso negado" });
+  const auth = req.headers["authorization"];
 
-  const info = req.body;
+  if (auth !== API_TOKEN) {
+    return res.status(403).json({ error: "Token inválido" });
+  }
 
-  // Busca IP do requester
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const { user, hour, placeId } = req.body;
 
-  // Pega país
-  let country = "Desconhecido";
-  try {
-    const geo = await fetch(`http://ip-api.com/json/${ip}`).then(res => res.json());
-    country = geo.country || "Desconhecido";
-  } catch {}
+  if (!user || !hour) {
+    return res.status(400).json({ error: "Dados ausentes" });
+  }
 
-  // Hora local
-  const agora = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-
-  const payload = {
-    embeds: [{
-      title: "📥 Nova Execução Roblox",
-      color: 0xffaaff,
-      fields: [
-        { name: "👤 Jogador", value: info.Player, inline: true },
-        { name: "🆔 UserId", value: String(info.UserId), inline: true },
-        { name: "🖥️ Executor", value: info.Executor, inline: true },
-        { name: "🎮 Jogo", value: `${info.PlaceName} (${info.PlaceId})`, inline: false },
-        { name: "🌍 País", value: country, inline: true },
-        { name: "🕒 Hora", value: agora, inline: true },
-        { name: "📡 JobId", value: info.JobId.slice(0, 10) + "...", inline: false },
-      ]
-    }]
+  const content = {
+    embeds: [
+      {
+        title: "🕵️ Log de Execução",
+        color: 0xff69b4,
+        fields: [
+          { name: "👤 Jogador", value: user, inline: true },
+          { name: "⏰ Horário", value: hour, inline: true },
+          { name: "🗺️ PlaceId", value: String(placeId), inline: false },
+        ],
+        timestamp: new Date().toISOString()
+      }
+    ]
   };
 
   try {
-    await fetch(WEBHOOK_URL, {
+    const fetch = await import("node-fetch");
+    const response = await fetch.default(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(content)
     });
-    res.status(200).json({ success: true });
+
+    return res.status(200).json({ status: "Enviado com sucesso" });
   } catch (err) {
-    res.status(500).json({ error: "Erro ao enviar para webhook" });
+    console.error(err);
+    return res.status(500).json({ error: "Erro ao enviar webhook" });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Servidor rodando na porta " + PORT));
+app.get("/", (_, res) => {
+  res.send("✅ API de Log está ativa.");
+});
+
+app.listen(PORT, () => {
+  console.log("Servidor rodando na porta " + PORT);
+});

@@ -2,11 +2,12 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
+const WEBHOOK_URL = process.env.DISCORD_WEBHOOK; // Keep this secure, e.g., via environment variable
 const API_TOKEN = process.env.API_TOKEN;
 
 app.use(express.json()); // Para ler JSON no body das requisições
 
+// Endpoint to receive webhook data
 app.post("/log", async (req, res) => {
   const auth = req.headers["authorization"];
 
@@ -14,7 +15,6 @@ app.post("/log", async (req, res) => {
     return res.status(403).json({ error: "Token inválido" });
   }
 
-  // Extrai os dados do body, já com fallback para strings ou valores padrão
   const {
     user,
     hour,
@@ -26,12 +26,10 @@ app.post("/log", async (req, res) => {
     jobId
   } = req.body;
 
-  // Valida dados obrigatórios
   if (!user || !hour) {
     return res.status(400).json({ error: "Dados ausentes: 'user' e 'hour' são obrigatórios" });
   }
 
-  // Garantir que os valores não fiquem vazios ou zeros indevidos
   const userSafe = user.trim() || "Desconhecido";
   const hourSafe = hour.trim() || "Desconhecido";
   const placeIdSafe = Number(placeId) > 0 ? Number(placeId) : "Desconhecido";
@@ -41,7 +39,6 @@ app.post("/log", async (req, res) => {
   const countryNameSafe = countryName && countryName.trim() ? countryName.trim() : "Desconhecido";
   const jobIdSafe = jobId && jobId.trim() ? jobId.trim() : "Desconhecido";
 
-  // Monta o payload do webhook
   const content = {
     embeds: [
       {
@@ -87,6 +84,38 @@ app.post("/log", async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Erro ao enviar webhook" });
+  }
+});
+
+// Secure website endpoint to submit webhook data
+app.post("/submit", async (req, res) => {
+  const { data, token } = req.body;
+
+  if (!token || token !== API_TOKEN) {
+    return res.status(403).json({ error: "Token inválido" });
+  }
+
+  if (!data || !data.user || !data.hour) {
+    return res.status(400).json({ error: "Dados ausentes: 'user' e 'hour' são obrigatórios" });
+  }
+
+  // Forward the data to the /log endpoint
+  try {
+    const fetch = await import("node-fetch");
+    const response = await fetch.default(`http://localhost:${PORT}/log`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": API_TOKEN
+      },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+    return res.status(response.status).json(result);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Erro ao processar solicitação" });
   }
 });
 

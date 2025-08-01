@@ -2,18 +2,20 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-const WEBHOOK_URL = process.env.DISCORD_WEBHOOK; // Keep this secure, e.g., via environment variable
+const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
 const API_TOKEN = process.env.API_TOKEN;
 
-app.use(express.json()); // Para ler JSON no body das requisições
+app.use(express.json());
 
-// Endpoint to receive webhook data
+// Endpoint para receber dados do webhook
 app.post("/log", async (req, res) => {
   const auth = req.headers["authorization"];
 
   if (!auth || auth !== API_TOKEN) {
     return res.status(403).json({ error: "Token inválido" });
   }
+
+  console.log("Dados recebidos:", req.body); // Log para depuração
 
   const {
     user,
@@ -32,8 +34,8 @@ app.post("/log", async (req, res) => {
 
   const userSafe = user.trim() || "Desconhecido";
   const hourSafe = hour.trim() || "Desconhecido";
-  const placeIdSafe = Number(placeId) > 0 ? Number(placeId) : "Desconhecido";
-  const userIdSafe = Number(userId) > 0 ? String(userId) : "Desconhecido";
+  const placeIdSafe = placeId && Number(placeId) > 0 ? Number(placeId) : "Desconhecido";
+  const userIdSafe = userId && Number(userId) > 0 ? String(userId) : "Desconhecido";
   const executorSafe = executor && executor.trim() ? executor.trim() : "Desconhecido";
   const countryFlagSafe = countryFlag && countryFlag.trim() ? countryFlag.trim() : "🏳️";
   const countryNameSafe = countryName && countryName.trim() ? countryName.trim() : "Desconhecido";
@@ -87,7 +89,7 @@ app.post("/log", async (req, res) => {
   }
 });
 
-// Secure website endpoint to submit webhook data
+// Endpoint seguro para envio via site
 app.post("/submit", async (req, res) => {
   const { data, token } = req.body;
 
@@ -99,7 +101,8 @@ app.post("/submit", async (req, res) => {
     return res.status(400).json({ error: "Dados ausentes: 'user' e 'hour' são obrigatórios" });
   }
 
-  // Forward the data to the /log endpoint
+  console.log("Dados enviados para /log:", data); // Log para depuração
+
   try {
     const fetch = await import("node-fetch");
     const response = await fetch.default(`http://localhost:${PORT}/log`, {
@@ -124,5 +127,5 @@ app.get("/", (_, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log("Servidor rodando na porta " + PORT);
+  console.log(`Servidor rodando na porta ${PORT}`);
 });

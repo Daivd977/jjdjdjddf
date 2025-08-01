@@ -6,6 +6,7 @@ const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
 const API_TOKEN = process.env.API_TOKEN;
 
 app.use(express.json());
+app.use(express.static("public")); // Serve arquivos da pasta 'public'
 
 // Endpoint para receber dados do webhook
 app.post("/log", async (req, res) => {
@@ -15,7 +16,7 @@ app.post("/log", async (req, res) => {
     return res.status(403).json({ error: "Token inválido" });
   }
 
-  console.log("Dados recebidos:", req.body); // Log para depuração
+  console.log("Dados recebidos:", req.body);
 
   const {
     user,
@@ -101,7 +102,7 @@ app.post("/submit", async (req, res) => {
     return res.status(400).json({ error: "Dados ausentes: 'user' e 'hour' são obrigatórios" });
   }
 
-  console.log("Dados enviados para /log:", data); // Log para depuração
+  console.log("Dados enviados para /log:", data);
 
   try {
     const fetch = await import("node-fetch");
@@ -123,7 +124,7 @@ app.post("/submit", async (req, res) => {
 });
 
 app.get("/", (_, res) => {
-  res.send("✅ API de Log está ativa.");
+  res.send("✅ API de Log está ativa."); // Isso será sobrescrito pelo index.html
 });
 
 app.listen(PORT, () => {

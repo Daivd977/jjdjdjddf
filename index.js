@@ -14,7 +14,17 @@ app.post("/log", async (req, res) => {
     return res.status(403).json({ error: "Token inválido" });
   }
 
-  const { user, hour, placeId } = req.body;
+  const {
+  user = "Desconhecido",
+  hour = "Desconhecido",
+  placeId = 0,
+  userId = 0,
+  executor = "Desconhecido",
+  countryFlag = "🏳️",
+  countryName = "Desconhecido",
+  jobId = "Desconhecido"
+} = req.body;
+
 
   if (!user || !hour) {
     return res.status(400).json({ error: "Dados ausentes" });

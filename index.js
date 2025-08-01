@@ -1,12 +1,15 @@
+require('dotenv').config();
+
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 10000;
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
 const API_TOKEN = process.env.API_TOKEN;
+const APP_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`; // URL do Render
 
 app.use(express.json());
-app.use(express.static("public")); // Serve arquivos da pasta 'public'
+app.use(express.static("public"));
 
 // Endpoint para receber dados do webhook
 app.post("/log", async (req, res) => {
@@ -16,7 +19,7 @@ app.post("/log", async (req, res) => {
     return res.status(403).json({ error: "Token inválido" });
   }
 
-  console.log("Dados recebidos:", req.body);
+  console.log("Dados recebidos no /log:", req.body);
 
   const {
     user,
@@ -41,6 +44,8 @@ app.post("/log", async (req, res) => {
   const countryFlagSafe = countryFlag && countryFlag.trim() ? countryFlag.trim() : "🏳️";
   const countryNameSafe = countryName && countryName.trim() ? countryName.trim() : "Desconhecido";
   const jobIdSafe = jobId && jobId.trim() ? jobId.trim() : "Desconhecido";
+
+  console.log("Dados processados:", { placeIdSafe, jobIdSafe });
 
   const content = {
     embeds: [
@@ -102,11 +107,11 @@ app.post("/submit", async (req, res) => {
     return res.status(400).json({ error: "Dados ausentes: 'user' e 'hour' são obrigatórios" });
   }
 
-  console.log("Dados enviados para /log:", data);
+  console.log("Dados recebidos no /submit:", data);
 
   try {
     const fetch = await import("node-fetch");
-    const response = await fetch.default(`http://localhost:${PORT}/log`, {
+    const response = await fetch.default(`${APP_URL}/log`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -121,10 +126,6 @@ app.post("/submit", async (req, res) => {
     console.error(err);
     return res.status(500).json({ error: "Erro ao processar solicitação" });
   }
-});
-
-app.get("/", (_, res) => {
-  res.send("✅ API de Log está ativa."); // Isso será sobrescrito pelo index.html
 });
 
 app.listen(PORT, () => {

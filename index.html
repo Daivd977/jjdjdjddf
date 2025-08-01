@@ -24,6 +24,7 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData.entries());
+      console.log("Dados enviados:", data); // Depuração no console do navegador
 
       const response = await fetch("/submit", {
         method: "POST",
@@ -35,6 +36,8 @@
       document.getElementById("result").textContent = result.error || result.status;
       if (response.ok) {
         console.log("Resposta do servidor:", result); // Depuração
+      } else {
+        console.error("Erro:", result.error);
       }
     });
   </script>

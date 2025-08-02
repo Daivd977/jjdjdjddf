@@ -9,10 +9,10 @@
     <input type="text" name="user" placeholder="Usuário" required>
     <input type="text" name="hour" placeholder="Horário" required>
     <input type="number" name="placeId" placeholder="Place ID" required>
-    <input type="text" name="userId" placeholder="User ID" required>
-    <input type="text" name="executor" placeholder="Executor" required>
-    <input type="text" name="countryFlag" placeholder="Bandeira" required>
-    <input type="text" name="countryName" placeholder="País" required>
+    <input type="text" name="userId" placeholder="User ID">
+    <input type="text" name="executor" placeholder="Executor">
+    <input type="text" name="countryFlag" placeholder="Bandeira">
+    <input type="text" name="countryName" placeholder="País">
     <input type="text" name="jobId" placeholder="Job ID" required>
     <input type="hidden" name="token" value="SEU_API_TOKEN_AQUI">
     <button type="submit">Enviar</button>
@@ -24,7 +24,6 @@
       e.preventDefault();
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData.entries());
-      console.log("Dados enviados:", data); // Depuração no console do navegador
 
       const response = await fetch("/submit", {
         method: "POST",
@@ -34,11 +33,6 @@
 
       const result = await response.json();
       document.getElementById("result").textContent = result.error || result.status;
-      if (response.ok) {
-        console.log("Resposta do servidor:", result); // Depuração
-      } else {
-        console.error("Erro:", result.error);
-      }
     });
   </script>
 </body>

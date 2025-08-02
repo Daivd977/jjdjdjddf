@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config(); // Carrega as variáveis de ambiente do .env
 
 const express = require("express");
 const app = express();
@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 10000;
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK;
 const API_TOKEN = process.env.API_TOKEN;
-const APP_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`; // URL do Render
+const APP_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 
 app.use(express.json());
 app.use(express.static("public"));
@@ -18,8 +18,6 @@ app.post("/log", async (req, res) => {
   if (!auth || auth !== API_TOKEN) {
     return res.status(403).json({ error: "Token inválido" });
   }
-
-  console.log("Dados recebidos no /log:", req.body);
 
   const {
     user,
@@ -44,8 +42,6 @@ app.post("/log", async (req, res) => {
   const countryFlagSafe = countryFlag && countryFlag.trim() ? countryFlag.trim() : "🏳️";
   const countryNameSafe = countryName && countryName.trim() ? countryName.trim() : "Desconhecido";
   const jobIdSafe = jobId && jobId.trim() ? jobId.trim() : "Desconhecido";
-
-  console.log("Dados processados:", { placeIdSafe, jobIdSafe });
 
   const content = {
     embeds: [
@@ -84,13 +80,11 @@ app.post("/log", async (req, res) => {
     });
 
     if (!response.ok) {
-      console.error("Erro no webhook:", response.statusText);
       return res.status(500).json({ error: "Erro ao enviar webhook" });
     }
 
     return res.status(200).json({ status: "Enviado com sucesso" });
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ error: "Erro ao enviar webhook" });
   }
 });
@@ -107,8 +101,6 @@ app.post("/submit", async (req, res) => {
     return res.status(400).json({ error: "Dados ausentes: 'user' e 'hour' são obrigatórios" });
   }
 
-  console.log("Dados recebidos no /submit:", data);
-
   try {
     const fetch = await import("node-fetch");
     const response = await fetch.default(`${APP_URL}/log`, {
@@ -123,11 +115,8 @@ app.post("/submit", async (req, res) => {
     const result = await response.json();
     return res.status(response.status).json(result);
   } catch (err) {
-    console.error(err);
     return res.status(500).json({ error: "Erro ao processar solicitação" });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+app.listen(PORT, () => {});
